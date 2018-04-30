@@ -27,7 +27,7 @@ namespace Actions
 {
 	using namespace GGJGame;
 	// wander around in direction of transmitter
-	GGJGame::EnemyAIBase::actionSignature lookForTransmitter = [](World* world, Entity* selfEntity)
+	GGJGame::EnemyAIBase::ActionSignature lookForTransmitter = [](World* world, Entity* selfEntity)
 	{
 		PathfindingComponent* pathfindingCmp = selfEntity->GetComponent<PathfindingComponent>();
 
@@ -43,7 +43,7 @@ namespace Actions
 				pathfindingCmp->SetDestination(transmitterPosition);
 			}
 
-			return false;
+			return State::FAILURE;
 		}
 		else
 		{
@@ -53,10 +53,10 @@ namespace Actions
 			ActorSystem::Move(selfEntity, movementVector, ENEMY_MOVEMENT_SPEED_MULT);
 		}
 
-		return true;
+		return State::SUCCESS;
 	};
 
-	GGJGame::EnemyAIBase::actionSignature attackPlayer = [](World* world, Entity* selfEntity)
+	GGJGame::EnemyAIBase::ActionSignature attackPlayer = [](World* world, Entity* selfEntity)
 	{
 		// if in line of sight
 		for(auto playerTuple : world->IterateComponents<PlayerComponent>())
@@ -77,12 +77,12 @@ namespace Actions
 				ActorSystem::Shoot(world, selfEntity, enemyForward.GetNormalized() * 1.5f, playerEnemyVec.GetNormalized());
 			}
 			else
-				return false;
+				return State::FAILURE;
 		}
-		return true;
+		return State::SUCCESS;
 	};
 
-	GGJGame::EnemyAIBase::actionSignature goAfterPlayer = [](World* world, Entity* selfEntity)
+	GGJGame::EnemyAIBase::ActionSignature goAfterPlayer = [](World* world, Entity* selfEntity)
 	{
 		PathfindingComponent* pathfindingCmp = selfEntity->GetComponent<PathfindingComponent>();
 
@@ -104,7 +104,7 @@ namespace Actions
 			ActorSystem::Move(selfEntity, movementDirection, ENEMY_MOVEMENT_SPEED_MULT);
 		}
 
-		return true;
+		return State::SUCCESS;
 	};
 }
 
