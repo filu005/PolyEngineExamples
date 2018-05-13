@@ -3,75 +3,52 @@
 #include <functional>
 
 #include <ECS/World.hpp>
-#include <Collections/OrderedMap.hpp>
+#include <EnemyAIAction.hpp>
+#include <deque>
 
 using namespace Poly;
 
 namespace GGJGame
 {
-	enum class State
-	{
-		SUCCESS,
-		FAILURE,
-		RUNNING
-	};
-
-	struct Action
-	{
-		using ActionSignature = std::function<State(World* world, Entity* selfEntity)>;
-		bool operator<(const Action& a)
-		{
-			return this->priority < a.priority;
-		}
-
-		ActionSignature action;
-		int priority;
-	};
-
 	class GAME_DLLEXPORT EnemyAIBase : public BaseObject<>
 	{
 	public:
-		using ActionSignature = std::function<State(World* world, Entity* selfEntity)>;
-
-		EnemyAIBase() : actions(OrderedMap<int, ActionSignature>())
+		EnemyAIBase()
 		{ }
 
-		void AddAction(int priority, ActionSignature action)
+		void AddAction(Action && action)
 		{
-			actions.Insert(priority, action);
+			actions.emplace_back(action);
 		}
 
-		void IterateActions(World* world, Entity* selfEntity)
-		{
-			for(auto action : actions)
-			{
-				State s = action.value(world, selfEntity);
-
-				// if action is still running, then save it so we could come back here in next tick
-				if(s == State::RUNNING)
-				{
-					// bind some observer
-				}
-
-				// If the child succeeds, or keeps running
-				if(s != State::FAILURE)
-					return;
-			}
-
-			// if we're here then all actions have failed
-			//RecreateActionsScript();
-		}
+		void IterateActions(World* world, Entity* selfEntity);
 
 	private:
 		virtual void InitActions() = 0;
 
+		void RefreshActionsDeque()
+		{
+			while(true)
+			{
+				auto action = actions.front();
+				actions.pop_front();
+				actions.push_back(action);
+				if(action.IsNull())
+					break;
+			}
+			//std::sort(actions.begin(), actions.end(), std::less<Action>());
+		}
+
 		void RecreateActionsScript()
 		{
-			actions.Clear();
+			actions.erase(actions.begin(), actions.end());
 
 			InitActions();
+
+			std::sort(actions.begin(), actions.end(), std::less<Action>());
 		}
-		OrderedMap<int, ActionSignature> actions;
+
+		std::deque<Action> actions;
 	};
 
 	class GAME_DLLEXPORT EnemyAIEngineer : public EnemyAIBase

@@ -50,8 +50,8 @@ const static Angle PLAYER_CAMERA_FOV = 60_deg;
 
 const static float ENEMY_CAPSULE_RADIUS = 0.3f;
 const static float ENEMY_CAPSULE_HEIGHT = 1.25f;
-const static float ENEMY_MASS = 80.f;
-const static float ENEMY_FRICTION = 1.5f;
+const static float ENEMY_MASS = 100.f;
+const static float ENEMY_FRICTION = 0.5f;
 const static float ENEMY_LINEAR_DAMPING = 0.7f;
 
 static const Vector2i MAP_SIZE = Vector2i(150, 150);
@@ -519,6 +519,7 @@ Poly::Entity* GGJGame::GameManagerSystem::SpawnEnemy(Poly::World* world, Poly::E
 	rigidbodyTemplate.AngularFactor = Vector(0.f, 0.f, 0.f);
 	rigidbodyTemplate.Friction = ENEMY_FRICTION;
 	rigidbodyTemplate.LinearDamping = ENEMY_LINEAR_DAMPING;
+	rigidbodyTemplate.RigidbodyType = eRigidBody3DType::DYNAMIC;
 	DeferredTaskSystem::AddComponentImmediate<Rigidbody3DComponent>(gEngine->GetWorld(), entity, gEngine->GetWorld(), rigidbodyTemplate);
 
 	//mesh
@@ -527,10 +528,10 @@ Poly::Entity* GGJGame::GameManagerSystem::SpawnEnemy(Poly::World* world, Poly::E
 	enemyMesh->SetShadingModel(eShadingModel::LIT);
 
 	// actor
-	//ActorComponent* actorCmp = DeferredTaskSystem::AddComponentImmediate<ActorComponent>(gEngine->GetWorld(), entity);
+	ActorComponent* actorCmp = DeferredTaskSystem::AddComponentImmediate<ActorComponent>(gEngine->GetWorld(), entity);
 
 	//enemy
-	//EnemyComponent* enemyCmp = DeferredTaskSystem::AddComponentImmediate<EnemyComponent>(world, entity, std::make_unique<T>());
+	EnemyComponent* enemyCmp = DeferredTaskSystem::AddComponentImmediate<EnemyComponent>(world, entity, std::make_unique<T>());
 
 	GameManagerWorldComponent* gameManager = Poly::gEngine->GetWorld()->GetWorldComponent<GameManagerWorldComponent>();
 	DeferredTaskSystem::AddComponentImmediate<PathfindingComponent>(gEngine->GetWorld(), entity, gameManager->Level->GetComponent<LevelComponent>()->NavigationGrid);

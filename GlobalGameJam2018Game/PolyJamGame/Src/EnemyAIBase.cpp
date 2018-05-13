@@ -1,63 +1,54 @@
 #include "EnginePCH.hpp"
 
-#include "ActorSystem.hpp"
 #include "AI/PathfindingComponent.hpp"
 #include "TransmitterComponent.hpp"
 #include "ActorComponent.hpp"
 #include "PlayerComponent.hpp"
 #include "EnemyComponent.hpp"
+#include "EnemyAISystem.hpp"
 #include "EnemyAIBase.hpp"
-
-static const float ENEMY_MOVEMENT_SPEED_MULT = 0.1f;
-
-void DebugDrawPath(Entity* ent)
-{
-	PathfindingComponent* cmp = ent->GetComponent<PathfindingComponent>();
-	auto& path = cmp->GetPath();
-	if (path.GetSize())
-	{
-		for (size_t i = 1; i < path.GetSize(); ++i)
-		{
-			DebugDrawSystem::DrawLine(ent->GetWorld(), Vector(path[i - 1].X, 0.1f, path[i - 1].Z), Vector(path[i].X, 0.1f, path[i].Z), Color::RED);
-		}
-	}
-}
+#include "EnemyAIAction.hpp"
 
 namespace Actions
 {
 	using namespace GGJGame;
 	// wander around in direction of transmitter
-	GGJGame::EnemyAIBase::ActionSignature lookForTransmitter = [](World* world, Entity* selfEntity)
+	GGJGame::Action::ActionSignature lookForTransmitter = [](World* world, Entity* selfEntity)
 	{
-		PathfindingComponent* pathfindingCmp = selfEntity->GetComponent<PathfindingComponent>();
+		using namespace EnemyAI;
 
-		auto path = pathfindingCmp->GetPath();
-		if(path.GetSize() == 0u)
+		auto findPositionOfClosestTransmitter = [](World* world, Entity* entity)
 		{
+			Vector closestTransmitterPosition;
+			auto shortestDistanceSquared = std::numeric_limits<float>::min();
+
 			for(auto transmitterTuple : world->IterateComponents<TransmitterComponent>())
 			{
 				auto transmitterCmp = std::get<TransmitterComponent*>(transmitterTuple);
 
+				Vector entityPosition = entity->GetTransform().GetGlobalTranslation();
 				auto transmitterPosition = transmitterCmp->GetTransform().GetGlobalTranslation();
 
-				pathfindingCmp->SetDestination(transmitterPosition);
+				auto distanceSquared = Vector(transmitterPosition - entityPosition).LengthSquared();
+				if(distanceSquared > shortestDistanceSquared)
+				{
+					closestTransmitterPosition = transmitterPosition;
+					shortestDistanceSquared = distanceSquared;
+				}
 			}
 
-			return State::FAILURE;
-		}
-		else
-		{
-			auto entityTranslation = selfEntity->GetTransform().GetGlobalTranslation();
-			//auto actorCmp = selfEntity->GetComponent<ActorComponent>();
-			auto movementVector = Vector(path[0].X, 0.0f, path[0].Y) - entityTranslation;
-			ActorSystem::Move(selfEntity, movementVector, ENEMY_MOVEMENT_SPEED_MULT);
-		}
+			return closestTransmitterPosition;
+		};
 
-		return State::SUCCESS;
+		State state = EnemyAISystem::query::SetEntityToFollow(world, selfEntity, findPositionOfClosestTransmitter);
+
+		return state;
 	};
 
-	GGJGame::EnemyAIBase::ActionSignature attackPlayer = [](World* world, Entity* selfEntity)
+	GGJGame::Action::ActionSignature attackPlayer = [](World* world, Entity* selfEntity)
 	{
+		using namespace EnemyAI;
+
 		// if in line of sight
 		for(auto playerTuple : world->IterateComponents<PlayerComponent>())
 		{
@@ -74,7 +65,8 @@ namespace Actions
 			if(playerEnemyDist <= selfEntity->GetComponent<EnemyComponent>()->lineOfSight)
 			{
 				// shoot bullets
-				ActorSystem::Shoot(world, selfEntity, enemyForward.GetNormalized() * 1.5f, playerEnemyVec.GetNormalized());
+				//ActorSystem::Shoot(world, selfEntity, enemyForward.GetNormalized() * 1.5f, playerEnemyVec.GetNormalized());
+				;
 			}
 			else
 				return State::FAILURE;
@@ -82,40 +74,83 @@ namespace Actions
 		return State::SUCCESS;
 	};
 
-	GGJGame::EnemyAIBase::ActionSignature goAfterPlayer = [](World* world, Entity* selfEntity)
+	GGJGame::Action::ActionSignature goAfterPlayer = [](World* world, Entity* selfEntity)
 	{
-		PathfindingComponent* pathfindingCmp = selfEntity->GetComponent<PathfindingComponent>();
+		using namespace EnemyAI;
 
-		for (auto playerTuple : world->IterateComponents<PlayerComponent>())
+		auto getPlayerPosition = [](World* world, Entity* entity)
 		{
-			auto playerCmp = std::get<PlayerComponent*>(playerTuple);
-			auto playerPosition = playerCmp->GetTransform().GetGlobalTranslation();
-			pathfindingCmp->SetDestination(playerPosition);
-			break;
-		}
+			Vector playerPosition;
+			for(auto playerTuple : world->IterateComponents<PlayerComponent>())
+			{
+				auto playerCmp = std::get<PlayerComponent*>(playerTuple);
+				playerPosition = playerCmp->GetTransform().GetGlobalTranslation();
+				break;
+			}
+			return playerPosition;
+		};
 
-		auto& path = pathfindingCmp->GetPath();
-		if(path.GetSize() > 0)
-		{
-			DebugDrawPath(selfEntity);
-			auto entityTranslation = selfEntity->GetTransform().GetGlobalTranslation();
-			//auto actorCmp = selfEntity->GetComponent<ActorComponent>();
-			auto movementDirection = Vector(path[1].X, 0.0f, path[1].Y) - entityTranslation;
-			ActorSystem::Move(selfEntity, movementDirection, ENEMY_MOVEMENT_SPEED_MULT);
-		}
+		State state = EnemyAISystem::query::SetEntityToFollow(world, selfEntity, getPlayerPosition);
 
-		return State::SUCCESS;
+		return state;
 	};
 }
 
 void GGJGame::EnemyAIEngineer::InitActions()
 {
-	AddAction(10, Actions::lookForTransmitter);
+	AddAction(Action(0, Actions::lookForTransmitter));
+	AddAction(Action(std::numeric_limits<int>::min(), nullptr)); // 'end of actions' marker
 }
 
 void GGJGame::EnemyAIAssailant::InitActions()
 {
 	// priority: lower is more important
-	//AddAction(10, Actions::attackPlayer);
-	AddAction(20, Actions::goAfterPlayer);
+	//AddAction(Action(20, Actions::attackPlayer));
+	AddAction(Action(10, Actions::goAfterPlayer));
+	AddAction(Action(std::numeric_limits<int>::min(), nullptr)); // 'end of actions' marker
+}
+
+void GGJGame::EnemyAIBase::IterateActions(World * world, Entity * selfEntity)
+{
+	using namespace EnemyAI;
+
+	while(true)
+	{
+		auto currentAction = actions.front();
+		actions.pop_front();
+
+		// we reached 'end of actions' marker
+		if(currentAction.IsNull())
+		{
+			actions.push_back(currentAction);
+			return;
+		}
+
+		State s = currentAction.run(world, selfEntity);
+
+		switch(s)
+		{
+		case State::INVALID:
+			actions.push_back(currentAction);
+			return;
+		case State::RUNNING:
+			// if action is still running, then push it back to the front
+			// so we could come back to it in the next tick
+			actions.push_front(currentAction);
+			return;
+		case State::SUCCESS:
+			// successfully ran the action in present tick
+			actions.push_back(currentAction);
+			RefreshActionsDeque();
+			return;
+		case State::FAILURE:
+			actions.push_back(currentAction);
+			continue; // ??
+		default:
+			break;
+		}
+
+		// we should never be here
+		assert(false);
+	}
 }

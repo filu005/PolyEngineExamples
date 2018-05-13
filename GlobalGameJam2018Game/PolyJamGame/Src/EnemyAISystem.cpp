@@ -1,5 +1,6 @@
 #include "EnginePCH.hpp"
 
+#include "ActorSystem.hpp"
 #include "EnemyAISystem.hpp"
 #include "EnemyComponent.hpp"
 #include "GameManagerWorldComponent.hpp"
@@ -15,6 +16,55 @@ using namespace Poly;
 using namespace GGJGame;
 
 constexpr float SPAWNRATE = 5.0f;
+static const float ENEMY_MOVEMENT_SPEED_MULT = 0.4f;
+static constexpr auto PATH_NODES_REACH_DISTANCE_THRESHOLD = 1.5f;
+
+EnemyAI::State GAME_DLLEXPORT EnemyAISystem::query::SetEntityToFollow(World * world, Entity * entity,
+																	  std::function<Vector(World*, Entity*)> EntityPositionPredicate)
+{
+	using namespace EnemyAI;
+
+	auto path = PathfindingSystem::GetPathToEntity(world, entity, EntityPositionPredicate);
+	if(path.IsEmpty())
+	{
+		return State::RUNNING;
+	}
+	else
+	{
+		EnemyComponent* enemyCmp = entity->GetComponent<EnemyComponent>();
+
+		if(enemyCmp->delineatedPath.empty())
+		{
+			for(auto& node : path)
+				enemyCmp->delineatedPath.push_front(node);
+		}
+
+		Vector nextNode = enemyCmp->delineatedPath.back();
+		Vector entityPosition = entity->GetTransform().GetGlobalTranslation();
+		if(Vector(nextNode - entityPosition).LengthSquared() < PATH_NODES_REACH_DISTANCE_THRESHOLD)
+		{
+			enemyCmp->delineatedPath.pop_back();
+			nextNode = enemyCmp->delineatedPath.back();
+		}
+		ActorSystem::Move(entity, nextNode - entityPosition, ENEMY_MOVEMENT_SPEED_MULT);
+		// when should pathfindingCmp->ResetDestination() ??
+
+		return State::SUCCESS;
+	}
+}
+
+void GGJGame::EnemyAISystem::DebugDrawPath(Entity * ent)
+{
+	PathfindingComponent* cmp = ent->GetComponent<PathfindingComponent>();
+	auto& path = cmp->GetPath();
+	if(path.GetSize())
+	{
+		for(size_t i = 1; i < path.GetSize(); ++i)
+		{
+			DebugDrawSystem::DrawLine(ent->GetWorld(), Vector(path[i - 1].X, 0.1f, path[i - 1].Z), Vector(path[i].X, 0.1f, path[i].Z), Color::RED);
+		}
+	}
+}
 
 void EnemyAISystem::Update(Poly::World* world)
 {
@@ -36,7 +86,7 @@ void EnemyAISystem::Update(Poly::World* world)
 	// hack; sori
 	static int noEnemies = 0;
 
-	if(noEnemies > 0)
+	if(noEnemies > 1)
 		return;
 
 	GameManagerWorldComponent* gmComp = world->GetWorldComponent<GameManagerWorldComponent>();
@@ -54,7 +104,7 @@ void EnemyAISystem::Update(Poly::World* world)
 				if (!cell->Occupied)
 				{
 					//gConsole.LogDebug("Spaaawned at {}", Vector(j, i, 0));
-					GameManagerSystem::SpawnEnemy<EnemyAIAssailant>(world, gmComp->Level, Vector(GameManagerSystem::Random(-45.0f, -35.0f), 1.0f, GameManagerSystem::Random(-5.0f, 5.0f))); //TODO::Tweak
+					GameManagerSystem::SpawnEnemy<EnemyAIEngineer>(world, gmComp->Level, Vector(GameManagerSystem::Random(-45.0f, -35.0f), 1.0f, GameManagerSystem::Random(-5.0f, 5.0f))); //TODO::Tweak
 					++noEnemies;
 					//cell->Occupied = true;
 					gmComp->Level->GetComponent<LevelComponent>()->TimeSinceLastEnemySpawn = 0;
