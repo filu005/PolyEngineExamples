@@ -3,6 +3,7 @@
 #include "ActorSystem.hpp"
 #include "EnemyAISystem.hpp"
 #include "EnemyComponent.hpp"
+#include "EnemyAITactics.hpp"
 #include "GameManagerWorldComponent.hpp"
 
 #include "LevelComponent.hpp"
@@ -17,14 +18,14 @@ using namespace GGJGame;
 
 constexpr float SPAWNRATE = 5.0f;
 static const float ENEMY_MOVEMENT_SPEED_MULT = 0.4f;
-static constexpr auto PATH_NODES_REACH_DISTANCE_THRESHOLD = 1.5f;
+static constexpr auto PATH_NODES_REACH_DISTANCE_THRESHOLD = 1.0f;
 
-EnemyAI::State GAME_DLLEXPORT EnemyAISystem::query::SetEntityToFollow(World * world, Entity * entity,
-																	  std::function<Vector(World*, Entity*)> EntityPositionPredicate)
+EnemyAI::State GAME_DLLEXPORT EnemyAISystem::query::MoveEntityToPosition(World * world, Entity * entity,
+																		 std::function<Vector(World*, Entity*)> PositionPredicate)
 {
 	using namespace EnemyAI;
 
-	auto path = PathfindingSystem::GetPathToEntity(world, entity, EntityPositionPredicate);
+	auto path = PathfindingSystem::QueryPathToPosition(world, entity, PositionPredicate);
 	if(path.IsEmpty())
 	{
 		return State::RUNNING;

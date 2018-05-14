@@ -10,11 +10,11 @@ namespace GGJGame
 {
 	namespace EnemyAISystem
 	{
-		// functions in query namespace always(!) return EnemyAI::State.
-		// it means that they can be in intermediate (async-like) state - State::RUNNING.
+		// Functions in query namespace always return EnemyAI::State.
+		// It means that they can be in intermediate (async-like) state - State::RUNNING.
 		namespace query
 		{
-			EnemyAI::State GAME_DLLEXPORT SetEntityToFollow(World* world, Entity* entity, std::function<Vector(World*, Entity*)> EntityPositionPredicate);
+			EnemyAI::State GAME_DLLEXPORT MoveEntityToPosition(World* world, Entity* entity, std::function<Vector(World*, Entity*)> PositionPredicate);
 		}
 
 		void DebugDrawPath(Entity* ent);

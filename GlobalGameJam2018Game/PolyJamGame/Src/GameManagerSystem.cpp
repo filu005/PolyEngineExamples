@@ -20,7 +20,7 @@
 #include "ActorComponent.hpp"
 #include "PlayerComponent.hpp"
 #include "EnemyComponent.hpp"
-#include "EnemyAIBase.hpp"
+#include "EnemyAITactics.hpp"
 #include "TransmitterComponent.hpp"
 #include "ReceiverComponent.hpp"
 #include "EnemyComponent.hpp"

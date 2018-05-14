@@ -46,11 +46,4 @@ namespace GGJGame
 		ActionSignature action;
 		int priority;
 	};
-
-	//namespace Actions
-	//{
-	//	static Action::ActionSignature lookForTransmitter;
-	//	static Action::ActionSignature attackPlayer;
-	//	static Action::ActionSignature goAfterPlayer;
-	//}
 }

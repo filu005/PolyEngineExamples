@@ -50,26 +50,4 @@ namespace GGJGame
 
 		std::deque<Action> actions;
 	};
-
-	class GAME_DLLEXPORT EnemyAIEngineer : public EnemyAIBase
-	{
-	public:
-		EnemyAIEngineer()
-		{
-			InitActions();
-		}
-	private:
-		virtual void InitActions() override final;
-	};
-
-	class GAME_DLLEXPORT EnemyAIAssailant : public EnemyAIBase
-	{
-	public:
-		EnemyAIAssailant()
-		{
-			InitActions();
-		}
-	private:
-		virtual void InitActions() override final;
-	};
 }
