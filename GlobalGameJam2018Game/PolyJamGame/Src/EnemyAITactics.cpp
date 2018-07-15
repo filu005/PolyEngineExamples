@@ -3,6 +3,7 @@
 #include "AI/PathfindingComponent.hpp"
 #include "TransmitterComponent.hpp"
 #include "ActorComponent.hpp"
+#include "ActorSystem.hpp"
 #include "PlayerComponent.hpp"
 #include "EnemyComponent.hpp"
 #include "EnemyAIAction.hpp"
@@ -64,9 +65,20 @@ namespace Actions
 			float playerEnemyDist = playerEnemyVec.Length();
 			if(playerEnemyDist <= selfEntity->GetComponent<EnemyComponent>()->lineOfSight)
 			{
-				// shoot bullets
-				//ActorSystem::Shoot(world, selfEntity, enemyForward.GetNormalized() * 1.5f, playerEnemyVec.GetNormalized());
-				;
+				// if player is not obstructed by geometry
+				auto rayCastRes = Physics3DSystem::ClosestHitRaycast(world, enemyPosition, playerPosition, eCollisionGroup::RIGIDBODY_GREEN, eCollisionGroup::RIGIDBODY_GREEN);
+
+				for(auto hit : rayCastRes.Hits)
+				{
+					Entity* ent = hit.HitEntity;
+					if(PlayerComponent* playerCmp = ent->GetComponent<PlayerComponent>())
+					{
+						// shoot bullets
+						ActorSystem::Shoot(world, selfEntity, enemyForward.GetNormalized() * 1.5f, playerEnemyVec.GetNormalized());
+						gConsole.LogDebug("Shooting at player!", playerCmp->GetSibling<ActorComponent>()->GetHitPoints());
+						break;
+					}
+				}
 			}
 			else
 				return State::FAILURE;

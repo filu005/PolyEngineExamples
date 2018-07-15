@@ -18,7 +18,7 @@ namespace GGJGame
 
 		void AddAction(Action && action)
 		{
-			actions.emplace_back(action);
+			actions.emplace_back( std::move(action) );
 		}
 
 		void IterateActions(World* world, Entity* selfEntity);

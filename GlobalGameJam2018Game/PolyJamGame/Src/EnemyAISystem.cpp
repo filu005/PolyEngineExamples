@@ -45,7 +45,10 @@ EnemyAI::State GAME_DLLEXPORT EnemyAISystem::query::MoveEntityToPosition(World *
 		if(Vector(nextNode - entityPosition).LengthSquared() < PATH_NODES_REACH_DISTANCE_THRESHOLD)
 		{
 			enemyCmp->delineatedPath.pop_back();
-			nextNode = enemyCmp->delineatedPath.back();
+			if( !enemyCmp->delineatedPath.empty() )
+			{
+				nextNode = enemyCmp->delineatedPath.back();
+			}
 		}
 		ActorSystem::Move(entity, nextNode - entityPosition, ENEMY_MOVEMENT_SPEED_MULT);
 		// when should pathfindingCmp->ResetDestination() ??
@@ -105,7 +108,7 @@ void EnemyAISystem::Update(Poly::World* world)
 				if (!cell->Occupied)
 				{
 					//gConsole.LogDebug("Spaaawned at {}", Vector(j, i, 0));
-					GameManagerSystem::SpawnEnemy<EnemyAIEngineer>(world, gmComp->Level, Vector(GameManagerSystem::Random(-45.0f, -35.0f), 1.0f, GameManagerSystem::Random(-5.0f, 5.0f))); //TODO::Tweak
+					GameManagerSystem::SpawnEnemy<EnemyAIAssailant>(world, gmComp->Level, Vector(GameManagerSystem::Random(-45.0f, -35.0f), 1.0f, GameManagerSystem::Random(-5.0f, 5.0f))); //TODO::Tweak
 					++noEnemies;
 					//cell->Occupied = true;
 					gmComp->Level->GetComponent<LevelComponent>()->TimeSinceLastEnemySpawn = 0;
