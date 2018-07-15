@@ -12,7 +12,7 @@ using namespace GGJGame;
 
 void HandlePlayerEnemyCollision(World* world, Entity* player, Entity* enemy, const Vector& normal)
 {
-	if (ActorComponent* actorCmp = enemy->GetComponent<ActorComponent>())
+	if (enemy->GetComponent<ActorComponent>())
 	{
 		player->GetComponent<ActorComponent>()->SetHitPoints(player->GetComponent<ActorComponent>()->GetHitPoints() - 34);
 		enemy->GetComponent<ActorComponent>()->SetHitPoints(0);

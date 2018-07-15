@@ -3,6 +3,7 @@
 #include <Time/TimeWorldComponent.hpp>
 #include <Rendering/Camera/CameraComponent.hpp>
 #include <Rendering/MeshRenderingComponent.hpp>
+#include <Rendering/SkyboxWorldComponent.hpp>
 #include <Movement/FreeFloatMovementComponent.hpp>
 #include <Physics2D/Physics2DColliders.hpp>
 #include <Physics2D/Rigidbody2DComponent.hpp>
@@ -10,8 +11,8 @@
 #include <Core.hpp>
 #include <ECS/DeferredTaskSystem.hpp>
 #include <Resources/SoundResource.hpp>
-
 #include "Rendering/ViewportWorldComponent.hpp"
+
 #include "GameManagerWorldComponent.hpp"
 #include "GameManagerSystem.hpp"
 #include "Level.hpp"
@@ -43,7 +44,8 @@ void SGJGame::Init()
 	Entity* Camera = gEngine->GetWorld()->GetWorldComponent<SGJ::GameManagerWorldComponent>()->Camera.Get();
 	gEngine->GetWorld()->GetWorldComponent<ViewportWorldComponent>()->SetCamera(0, gEngine->GetWorld()->GetComponent<Poly::CameraComponent>(Camera));
 	DeferredTaskSystem::AddComponent<PostprocessSettingsComponent>(gEngine->GetWorld(), Camera);
-	
+
+	DeferredTaskSystem::AddWorldComponentImmediate<SkyboxWorldComponent>(gEngine->GetWorld(), "HDR/HDR.hdr", eResourceSource::GAME);
 	// load levels
 	SGJ::GameManagerSystem::LoadLevel(gEngine->GetWorld(), "Levels/Level0.csv");
 	//SGJ::GameManagerSystem::LoadLevel(gEngine->GetWorld(), "Levels/Level0_1.csv");

@@ -4,19 +4,19 @@
 #include "CameraMovementComponent.hpp"
 #include "Level.hpp"
 
+#include "PlayerControllerComponent.hpp"
+#include "TileComponent.hpp"
+#include <Audio/SoundEmitterComponent.hpp>
+#include <Audio/SoundSystem.hpp>
+#include <Debugging/DebugDrawComponents.hpp>
 #include <ECS/DeferredTaskSystem.hpp>
-#include <Physics2D/Physics2DColliders.hpp>
-#include <Physics2D/Rigidbody2DComponent.hpp>
+#include <Movement/FreeFloatMovementComponent.hpp>
 #include <Rendering/MeshRenderingComponent.hpp>
 #include <Rendering/Camera/CameraComponent.hpp>
-#include <Movement/FreeFloatMovementComponent.hpp>
 #include <Rendering/Lighting/LightSourceComponent.hpp>
-#include "TileComponent.hpp"
-#include "PlayerControllerComponent.hpp"
+#include <Physics2D/Physics2DColliders.hpp>
+#include <Physics2D/Rigidbody2DComponent.hpp>
 #include "Physics2D/Physics2DWorldComponent.hpp"
-#include <Audio/SoundEmitterComponent.hpp>
-#include <Debugging/DebugDrawComponents.hpp>
-#include <Audio/SoundSystem.hpp>
 
 
 using namespace SGJ;
@@ -109,7 +109,7 @@ void SGJ::GameManagerSystem::Update(Poly::World* world)
 Entity* GameManagerSystem::CreateTileObject(Poly::World* world, const Poly::Vector& position, eTileType tileType, String meshSource,
 	eRigidBody2DType physicsProperties = eRigidBody2DType::STATIC, const Vector& size = Vector(1, 1, 1), const Color& color = Color(0, 0, 0), bool colliding = true)
 {
-	DebugDrawPreset ddrawPreset = physicsProperties == eRigidBody2DType::STATIC ? DebugDrawPreset::STATIC : DebugDrawPreset::DYNAMIC;
+	eDebugDrawPreset ddrawPreset = physicsProperties == eRigidBody2DType::STATIC ? eDebugDrawPreset::STATIC : eDebugDrawPreset::DYNAMIC;
 
 	Entity* tile = DeferredTaskSystem::SpawnEntityImmediate(world);
 	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, tile, ddrawPreset);
@@ -130,40 +130,32 @@ Entity* GameManagerSystem::CreateTileObject(Poly::World* world, const Poly::Vect
 	Entity* mesh = DeferredTaskSystem::SpawnEntityImmediate(world);
 	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, mesh, ddrawPreset);
 	DeferredTaskSystem::AddComponentImmediate<MeshRenderingComponent>(world, mesh, meshSource, eResourceSource::GAME);
-	world->GetComponent<MeshRenderingComponent>(mesh)->SetMaterial(0, PhongMaterial(color, color, color, 8.0f));
-	world->GetComponent<MeshRenderingComponent>(mesh)->SetShadingModel(eShadingModel::LIT);
+	world->GetComponent<MeshRenderingComponent>(mesh)->SetMaterial(0, Material(Color::BLACK, color, 1.0f, 1.0f, 0.5f));
+	world->GetComponent<MeshRenderingComponent>(mesh)->SetShadingModel(eShadingModel::PBR);
 	
 	EntityTransform& meshTrans = mesh->GetTransform();
 	mesh->SetParent(tile);
 
-	Entity* tileFakeGlow = DeferredTaskSystem::SpawnEntityImmediate(world);
-	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, tileFakeGlow, DebugDrawPreset::GFX);
-	EntityTransform& glowTrans = tileFakeGlow->GetTransform();
-	tileFakeGlow->SetParent(mesh);
-	glowTrans.SetLocalTranslation(Vector(0.0f, 0.0f, 0.2f));
-	glowTrans.SetLocalScale(Vector(3.0f, 3.0f, 3.0f));
-	Color c = Color(color);
-	c.A = 0.5;
-	DeferredTaskSystem::AddComponentImmediate<Poly::MeshRenderingComponent>(world, tileFakeGlow, "Quad.obj", eResourceSource::GAME);
-	world->GetComponent<MeshRenderingComponent>(tileFakeGlow)->SetMaterial(0, PhongMaterial(c, c, c, 8.0f));
-
 	switch (tileType)
 	{
 	case eTileType::SPIKESBOTTOM:
-		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_X, 90_deg));
+		meshTrans.SetLocalScale(size * 2.5f);
 		break;
 	case eTileType::SPIKESTOP:
-		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, 180_deg) * Quaternion(Vector::UNIT_X, 90_deg));
+		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, 180_deg));
+		meshTrans.SetLocalScale(size * 2.5f);
 		break;
 	case eTileType::SPIKESLEFT:
-		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, -90_deg) * Quaternion(Vector::UNIT_X, 90_deg));
+		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, -90_deg));
+		meshTrans.SetLocalScale(size * 2.5f);
 		break;
 	case eTileType::SPIKESRIGHT:
-		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, 90_deg) * Quaternion(Vector::UNIT_X, 90_deg));
+		meshTrans.SetLocalRotation(Quaternion(Vector::UNIT_Z, 90_deg));
+		meshTrans.SetLocalScale(size * 2.5f);
 		break;
 	default:;
+		meshTrans.SetLocalScale(size);
 	}
-	meshTrans.SetLocalScale(size);
 
 	tileTrans.SetLocalTranslation(position);
 	return tile;
@@ -172,7 +164,7 @@ Entity* GameManagerSystem::CreateTileObject(Poly::World* world, const Poly::Vect
 Entity* GameManagerSystem::SpawnPlayer(Poly::World* world, const Poly::Vector& position)
 {
 	Entity* player = DeferredTaskSystem::SpawnEntityImmediate(world);
-	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, player, DebugDrawPreset::PLAYER);
+	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, player, eDebugDrawPreset::PLAYER);
 	DeferredTaskSystem::AddComponentImmediate<PlayerControllerComponent>(world, player);
 	PlayerControllerComponent* p = world->GetComponent<PlayerControllerComponent>(player);
 	p->SpawnPoint = position;
@@ -185,25 +177,16 @@ Entity* GameManagerSystem::SpawnPlayer(Poly::World* world, const Poly::Vector& p
 	rigidBody->SetAngularDamping(10);
 
 	Entity* body = DeferredTaskSystem::SpawnEntityImmediate(world);
-	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, body, DebugDrawPreset::STATIC);
+	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, body, eDebugDrawPreset::STATIC);
 	EntityTransform& bodyTrans = body->GetTransform();
 	body->SetParent(player);
 	//bodyTrans->SetLocalRotation(Quaternion(Vector::UNIT_X, 90_deg));
-	Vector correctedSize = Vector(0.4f, 0.4f, 0.1f);
-	bodyTrans.SetLocalScale(correctedSize);
+	// Vector correctedSize = Vector(0.4f, 0.4f, 0.1f);
+	// bodyTrans.SetLocalScale(correctedSize);
 	Color bodyColor = Color(0.0f, 1.0f, 0.0f, 1.0f);
-	DeferredTaskSystem::AddComponentImmediate<Poly::MeshRenderingComponent>(world, body, "Models/player.fbx", eResourceSource::GAME);
-	world->GetComponent<MeshRenderingComponent>(body)->SetShadingModel(eShadingModel::LIT);
-	world->GetComponent<MeshRenderingComponent>(body)->SetMaterial(0, PhongMaterial(bodyColor, bodyColor, bodyColor, 8.0f));
-
-	Entity* playerFakeGlow = DeferredTaskSystem::SpawnEntityImmediate(world);
-	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, playerFakeGlow, DebugDrawPreset::GFX);
-	EntityTransform& glowTrans = playerFakeGlow->GetTransform();
-	playerFakeGlow->SetParent(player);
-	Color playerLightColor = Color(0.0f, 1.0f, 0.0f, 0.5f);
-	DeferredTaskSystem::AddComponentImmediate<Poly::MeshRenderingComponent>(world, playerFakeGlow, "Quad.obj", eResourceSource::GAME);
-	world->GetComponent<MeshRenderingComponent>(playerFakeGlow)->SetShadingModel(eShadingModel::LIT);
-	world->GetComponent<MeshRenderingComponent>(playerFakeGlow)->SetMaterial(0, PhongMaterial(playerLightColor, playerLightColor, playerLightColor, 8.0f));
+	DeferredTaskSystem::AddComponentImmediate<Poly::MeshRenderingComponent>(world, body, "Models/player.obj", eResourceSource::GAME);
+	world->GetComponent<MeshRenderingComponent>(body)->SetMaterial(0, Material(Color::BLACK, bodyColor, 1.0f, 1.0f, 0.5f));
+	world->GetComponent<MeshRenderingComponent>(body)->SetShadingModel(eShadingModel::PBR);
 
 	playerTrans.SetLocalTranslation(position);
 	return player;
@@ -267,12 +250,12 @@ void SGJ::GameManagerSystem::SpawnLevel(Poly::World* world, size_t idx)
 					gameMgrCmp->Player = SpawnPlayer(world, Vector(posW, -posH, 0));
 				break;
 			case eTileType::PLAYERENDPOS:
-				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.fbx", eRigidBody2DType::STATIC, Vector(0.5f, 0.5f, 0.5f), Color(0.f, 0.f, 1.5f)));
+				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.obj", eRigidBody2DType::STATIC, Vector(0.5f, 0.5f, 0.5f), Color(0.f, 0.f, 1.5f)));
 				break;
 
 			case eTileType::STATICGROUND:
 			case eTileType::RIGIDBODYGROUND:
-				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.fbx",
+				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.obj",
 					level->Tiles[idx] == eTileType::STATICGROUND ? eRigidBody2DType::STATIC : eRigidBody2DType::DYNAMIC,
 					level->Tiles[idx] == eTileType::STATICGROUND ? Vector(0.5f, 0.5f, 0.5f) : Vector(0.4f, 0.4f, 0.4f),
 					level->Tiles[idx] == eTileType::STATICGROUND ? Color(0.05f, 0.f, 0.125f) : Color(0.5f, 0.5f, 0.5f)));
@@ -282,11 +265,11 @@ void SGJ::GameManagerSystem::SpawnLevel(Poly::World* world, size_t idx)
 			case eTileType::SPIKESTOP:
 			case eTileType::SPIKESLEFT:
 			case eTileType::SPIKESRIGHT:
-				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/spikes.fbx", eRigidBody2DType::STATIC, Vector(0.4f, 0.4f, 0.25f), Color(1.2f, 0.f, 0.f)));
+				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/spikes.obj", eRigidBody2DType::STATIC, Vector(0.4f, 0.4f, 0.25f), Color(1.2f, 0.f, 0.f)));
 				break;
 
 			default:
-				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.fbx", eRigidBody2DType::STATIC, Vector(0.5f, 0.5f, 0.5f), Color(0.25f, 0, 0.125f), false));
+				gameMgrCmp->LevelEntities.PushBack(CreateTileObject(world, Vector(posW, -posH, 0.f), level->Tiles[idx], "Models/cube.obj", eRigidBody2DType::STATIC, Vector(0.5f, 0.5f, 0.5f), Color(0.25f, 0, 0.125f), false));
 				break;
 			}
 		}
@@ -341,17 +324,6 @@ void SGJ::GameManagerSystem::PrepareNonlevelObjects(Poly::World * world)
 	SoundSystem::PlayEmitter(world, backgroundPlayer);
 	SoundSystem::LoopEmitter(world, backgroundPlayer);
 	SoundSystem::SetEmitterGain(world, backgroundPlayer, 0.1f);
-
-	world->GetWorldComponent<AmbientLightWorldComponent>()->SetColor(Color(0.2f, 0.5f, 1.0f));
-	world->GetWorldComponent<AmbientLightWorldComponent>()->SetIntensity(0.5f); 
-
-	Quaternion DirLightRot = Quaternion(Vector::UNIT_Y, 80_deg) * Quaternion(Vector::UNIT_X, -80_deg);
-	Entity* KeyDirLight = DeferredTaskSystem::SpawnEntityImmediate(world);
-	DeferredTaskSystem::AddComponentImmediate<DebugDrawableComponent>(world, KeyDirLight, DebugDrawPreset::GFX);
-	DeferredTaskSystem::AddComponentImmediate<Poly::DirectionalLightComponent>(world, KeyDirLight, Color(1.0f, 0.9f, 0.8f), 0.8f);
-	EntityTransform& dirLightTrans = KeyDirLight->GetTransform();
-	dirLightTrans.SetLocalRotation(DirLightRot);
-	gameMgrCmp->OtherEntities.PushBack(KeyDirLight);
 }
 
 void SGJ::GameManagerSystem::Cleanup(Poly::World* world)

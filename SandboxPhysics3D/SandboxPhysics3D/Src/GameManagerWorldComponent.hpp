@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/ComponentBase.hpp"
+#include "ECS/Entity.hpp"
 #include <Collections/Dynarray.hpp>
 
 namespace BT
@@ -10,11 +11,11 @@ namespace BT
 	public:
 		GameManagerWorldComponent() = default;
 
-		Poly::UniqueID Camera;
-		Poly::UniqueID DirectionalLight;
+		Poly::Entity* Camera;
+		Poly::Entity* DirectionalLight;
 
-		Poly::UniqueID Ground;
-		Poly::Dynarray<Poly::UniqueID> Bricks;
-		Poly::Dynarray<Poly::UniqueID> Bullets;
+		Poly::Entity* Ground;
+		Poly::Dynarray<Poly::Entity*> Bricks;
+		Poly::Dynarray<Poly::Entity*> Bullets;
 	};
 }

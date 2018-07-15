@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Rendering/Lighting/LightSourceComponent.hpp>
-#include <Rendering/MeshRenderingComponent.hpp>
-#include <ECS/ComponentBase.hpp>
-#include <Rendering/Particles/ParticleComponent.hpp>
-#include <Collections/Dynarray.hpp>
 #include <UniqueID.hpp>
+#include <Collections/Dynarray.hpp>
+#include <ECS/ComponentBase.hpp>
+#include <Rendering/MeshRenderingComponent.hpp>
+#include <Rendering/PostprocessSettingsComponent.hpp>
+#include <Rendering/Lighting/LightSourceComponent.hpp>
 
 using namespace Poly;
 
@@ -13,24 +13,22 @@ class GAME_DLLEXPORT GameManagerWorldComponent : public ComponentBase
 {
 public:
 	SafePtr<Entity> Camera;
-	SafePtr<Entity> KeyDirLight;
-	Dynarray<SafePtr<Entity>> DirLights;
-	Dynarray<PointLightComponent*> PointLights;
-	Dynarray<Vector> PointLightPositions;
-	Dynarray<SafePtr<Entity>> SpotLights;
-	Dynarray<MeshRenderingComponent*> DebugMeshes;
+	PostprocessSettingsComponent* PostCmp;
+	SafePtr<Entity> Model;
 	bool IsDrawingDebugMeshes = true;
-
 	Dynarray<SafePtr<Entity>> GameEntities;
 
 	ParticleComponent* particleDefault;
-	ParticleComponent* particleLocalSpace;
-	ParticleComponent* particleWorldSpace;
 	ParticleComponent* particleAmbient;
 	ParticleComponent* particleAmbientWind;
+	ParticleComponent* particleLocalSpace;
+	ParticleComponent* particleWorldSpace;
 
 	ParticleComponent* particleHeart;
 	ParticleComponent* particleHeartImpact0;
 	ParticleComponent* particleHeartImpact1;
 	ParticleComponent* particleHeartImpact2;
+
+	Dynarray<Vector> LightsStartPositions;
+	Dynarray<Entity*> PointLightEntities;
 };

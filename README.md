@@ -7,7 +7,7 @@ Game examples for [**PolyEngine**](https://github.com/KNTGPolygon/PolyEngine) - 
 ## Running the examples
 1. Clone PolyEngine repository and this repository to your computer
 2. Make sure you have Python 3.6 installed
-3. On *nix platforms insall all missing dependancies
+3. On *nix platforms install all missing dependancies (for Ubuntu 18.04 you can use Scripts/ubuntu18.04_install_dependencies.sh)
 4. Go to `<EngineRepository>/PolyEngine/Scripts/`
 5. Run `py ProjectTool.py -u <ExamplesRepository>/<GameName>`. This will create make/sln file in `<ExamplesRepository>/<GameName>/Build`.
 6. Windows: Open `<GameName>.sln` and set project `<GameName>` as startup project. Compile and Run!

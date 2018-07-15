@@ -1,0 +1,62 @@
+# Blender MTL File: 'model.blend'
+# Material Count: 4
+
+newmtl hull
+Ns -3.921569
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.164706 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni -1.000000
+d 1.000000
+illum 2
+map_Kd textures\hull_albedo.jpg
+map_Bump textures\\hull_normal.jpg
+map_Ka textures\\hull_AO.jpg
+map_Ks textures\\hull_metallic.jpg
+map_Ns textures\\hull_roughness.jpg
+
+newmtl track
+Ns -3.921569
+Ka 1.000000 1.000000 1.000000
+Kd 0.666667 0.000000 0.764706
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni -1.000000
+d 1.000000
+illum 2
+map_Kd textures\track_albedo.jpg
+map_Bump textures\\track_normal.jpg
+map_Ka textures\\track_AO.jpg
+map_Ks textures\\hull_metallic.jpg
+map_Ns textures\\track_roughness.jpg
+
+newmtl turret
+Ns -3.921569
+Ka 1.000000 1.000000 1.000000
+Kd 0.039216 0.560784 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni -1.000000
+d 1.000000
+illum 2
+map_Kd textures\turret_albedo.jpg
+map_Bump textures\\turret_normal.jpg
+map_Ka textures\\turret_AO.jpg
+map_Ks textures\\turret_metallic.jpg
+map_Ns textures\\turret_roughness.jpg
+
+newmtl wheels
+Ns -3.921569
+Ka 1.000000 1.000000 1.000000
+Kd 0.592157 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni -1.000000
+d 1.000000
+illum 2
+map_Kd textures\wheels_albedo.jpg
+map_Bump textures\\wheels_normal.jpg
+map_Ka textures\\wheels_AO.jpg
+map_Ks textures\\wheels_metallic.jpg
+map_Ns textures\\wheels_roughness.jpg
